@@ -12,8 +12,8 @@ models:
     network:
       - name: net
         input: STATES
-        layers: [128, 64]
-        activations: elu
+        layers: [512, 256, 128]
+        activations: relu
     output: ACTIONS
   value:
     class: DeterministicMixin
@@ -21,8 +21,8 @@ models:
     network:
       - name: net
         input: STATES
-        layers: [128, 64]
-        activations: elu
+        layers: [512, 256, 128]
+        activations: rlu
     output: ONE
 
 memory:

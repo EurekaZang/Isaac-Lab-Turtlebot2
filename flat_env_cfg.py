@@ -11,6 +11,7 @@ and a detailed reward structure adapted for a differential-drive wheeled robot.
 import math
 
 import isaaclab.sim as sim_utils
+from isaaclab.sim import UsdFileCfg
 from  isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
@@ -22,13 +23,14 @@ from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
-from isaaclab.sensors import ContactSensorCfg
+from isaaclab.sensors import ContactSensorCfg, RayCasterCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR, ISAACLAB_NUCLEUS_DIR
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+from isaaclab.sensors import patterns
 
-import isaaclab_tasks.manager_based.locomotion.velocity.mdp as mdp
+import isaaclab_tasks.manager_based.locomotion.velocity.config.turtlebot2.mdp as mdp
 from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG
 
 ##
@@ -38,53 +40,75 @@ from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG
 @configclass
 class TurtleBot2SceneCfg(InteractiveSceneCfg):
     """Configuration for the flat terrain scene with a TurtleBot2 robot."""
-    terrain = TerrainImporterCfg(
-        prim_path="/World/ground",
-        terrain_type="plane",
-        terrain_generator=None,
-        collision_group=-1,
-        physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
-            restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+    ground = AssetBaseCfg(
+        prim_path="/World/Ground",
+        spawn=sim_utils.UsdFileCfg(
+            usd_path=f"{ISAAC_NUCLEUS_DIR}/Environments/Terrains/flat_plane.usd",
+            scale=(1, 1, 1),
         ),
-        visual_material=sim_utils.MdlFileCfg(
-            mdl_path=f"{ISAACLAB_NUCLEUS_DIR}/Materials/Earth/Ground_Asphalt_Cracked_Stones.mdl",
-            project_uvw=True,
-            texture_scale=(0.5, 0.5),
-        ),
-        debug_vis=False,
     )
 
     # robot: TurtleBot2 articulation
     robot = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Robot",
         spawn=sim_utils.UsdFileCfg(
+            # usd_path=f"/home/unnc/Desktop/turtlebot2.usd",
             usd_path=f"{ISAAC_NUCLEUS_DIR}/Robots/iRobot/create_3.usd",
             activate_contact_sensors=True,
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
+                rigid_body_enabled=True,
+                kinematic_enabled=False,
                 disable_gravity=False,
-                max_depenetration_velocity=5.0,
+                max_depenetration_velocity=10.0,
+            ),
+            collision_props=sim_utils.CollisionPropertiesCfg(
+                collision_enabled=True,
             ),
             articulation_props=sim_utils.ArticulationRootPropertiesCfg(
                 enabled_self_collisions=False,
             ),
         ),
         init_state=ArticulationCfg.InitialStateCfg(
-            pos=(0.0, 0.0, 0.2),
+            pos=(0.0, 0.0, 0.0),
             joint_pos={"left_wheel_joint": 0.0, "right_wheel_joint": 0.0},
             joint_vel={"left_wheel_joint": 0.0, "right_wheel_joint": 0.0},
         ),
         actuators={
             "wheels": ImplicitActuatorCfg(
                 joint_names_expr=["left_wheel_joint", "right_wheel_joint"],
-                stiffness=0.0,
+                stiffness=2.0,
                 damping=10.0,
             ),
         },
-        soft_joint_pos_limit_factor=1.0
     )
+
+    ray_caster = RayCasterCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/base_link",
+        update_period=1 / 30,
+        offset=RayCasterCfg.OffsetCfg(pos=(0, 0, 0.2)),
+        mesh_prim_paths=["/World/envs/env_0/Scene"],
+        ray_alignment="yaw",
+        pattern_cfg=patterns.LidarPatternCfg(
+            channels=1, vertical_fov_range=[0, 1], horizontal_fov_range=[-180, 180], horizontal_res=1.0
+        ),
+        debug_vis=False,
+    )
+
+    scene = AssetBaseCfg(
+        prim_path="{ENV_REGEX_NS}/Scene",
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[0.0, 0.0, 0.0], rot=[0.0, 0.0, 0.0, 0.0]),
+        spawn=UsdFileCfg(
+            usd_path=f"/home/unnc/Desktop/nav_scene_v2.usd",
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(
+                rigid_body_enabled=True,
+                kinematic_enabled=True,
+                disable_gravity=False),
+            collision_props=sim_utils.CollisionPropertiesCfg(
+                collision_enabled=True
+            )
+        ),
+    )
+
 
     contact_forces = ContactSensorCfg(
         prim_path="{ENV_REGEX_NS}/Robot/base_link",
@@ -141,6 +165,7 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group, adapted for a wheeled robot."""
 
+        lidar_distances = ObsTerm(func=mdp.get_lidar_distances, params={"sensor_cfg": SceneEntityCfg(name="ray_caster")})
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
@@ -243,32 +268,23 @@ class TerminationsCfg:
 class TurtleBot2FlatEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the TurtleBot2 velocity-tracking environment on flat terrains."""
 
-    scene: TurtleBot2SceneCfg = TurtleBot2SceneCfg(num_envs=2048, env_spacing=2.5)
+    scene: TurtleBot2SceneCfg = TurtleBot2SceneCfg(num_envs=2048, env_spacing=20)
     actions: ActionsCfg = ActionsCfg()
     observations: ObservationsCfg = ObservationsCfg()
     commands: CommandsCfg = CommandsCfg()
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
-    # curriculum: CurriculumCfg = CurriculumCfg()
 
     def __post_init__(self):
         """Post initialization."""
-        self.decimation = 2
+        self.decimation = 20
         self.episode_length_s = 20.0
         self.sim.dt = 0.01
         self.sim.render_interval = self.decimation
-        self.sim.physics_material = self.scene.terrain.physics_material
 
         if self.scene.contact_forces is not None:
             self.scene.contact_forces.update_period = self.sim.dt
-
-        if getattr(self.curriculum, "terrain_levels", None) is not None:
-            if self.scene.terrain.terrain_generator is not None:
-                self.scene.terrain.terrain_generator.curriculum = True
-        else:
-            if self.scene.terrain.terrain_generator is not None:
-                self.scene.terrain.terrain_generator.curriculum = False
 
 @configclass
 class TurtleBot2FlatEnvCfg_PLAY(TurtleBot2FlatEnvCfg):

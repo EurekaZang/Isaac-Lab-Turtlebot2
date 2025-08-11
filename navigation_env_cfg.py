@@ -16,7 +16,7 @@ from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAACLAB_NUCLEUS_DIR
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
-import isaaclab_tasks.manager_based.navigation.mdp as mdp
+import isaaclab_tasks.manager_based.locomotion.velocity.config.turtlebot2.mdp as mdp
 from .flat_env_cfg import TurtleBot2FlatEnvCfg
 
 LOW_LEVEL_ENV_CFG = TurtleBot2FlatEnvCfg()
@@ -43,6 +43,7 @@ class EventCfg:
     )
 
 
+
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
@@ -58,6 +59,11 @@ class ObservationsCfg:
 
     @configclass
     class PolicyCfg(ObsGroup):
+        lidar_distances = ObsTerm(
+            func=mdp.get_lidar_distances,
+            params={"sensor_cfg": SceneEntityCfg("ray_caster")},
+            noise=Unoise(n_min=-0.01, n_max=0.01),
+        )
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
@@ -75,7 +81,7 @@ class RewardsCfg:
     termination_penalty = RewTerm(func=mdp.is_terminated, weight=-400.0)
     position_tracking = RewTerm(
         func=mdp.position_command_error_tanh,
-        weight=0.5,
+        weight=1.0,
         params={"std": 2.0, "command_name": "pose_command"},
     )
     position_tracking_fine_grained = RewTerm(
@@ -97,9 +103,9 @@ class CommandsCfg:
     pose_command = mdp.UniformPose2dCommandCfg(
         asset_name="robot",
         simple_heading=True,
-        resampling_time_range=(8.0, 8.0),
-        debug_vis=True,
-        ranges=mdp.UniformPose2dCommandCfg.Ranges(pos_x=(-5.0, 5.0), pos_y=(-5.0, 5.0), heading=(0.0, 0.0)),
+        resampling_time_range=(60.0, 90.0),
+        debug_vis=False,
+        ranges=mdp.UniformPose2dCommandCfg.Ranges(pos_x=(-15.0, 15.0), pos_y=(-15.0, 15.0), heading=(0.0, 0.0)),
     )
 
 
@@ -108,10 +114,10 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    # base_contact = DoneTerm(
-    #     func=mdp.illegal_contact,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 5.0},
-    # )
+    base_contact = DoneTerm(
+        func=mdp.illegal_contact,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 1.0},
+    )
 
 
 @configclass
@@ -135,11 +141,6 @@ class NavigationEnvCfg(ManagerBasedRLEnvCfg):
         self.sim.render_interval = LOW_LEVEL_ENV_CFG.decimation
         self.decimation = LOW_LEVEL_ENV_CFG.decimation * 10
         self.episode_length_s = self.commands.pose_command.resampling_time_range[1]
-
-        # if self.scene.height_scanner is not None:
-        #     self.scene.height_scanner.update_period = (
-        #         self.actions.pre_trained_policy_action.low_level_decimation * self.sim.dt
-        #     )
         if self.scene.contact_forces is not None:
             self.scene.contact_forces.update_period = self.sim.dt
 
@@ -149,6 +150,6 @@ class NavigationEnvCfg_PLAY(NavigationEnvCfg):
         # post init of parent
         super().__post_init__()
 
-        self.scene.num_envs = 50
-        self.scene.env_spacing = 2.5
+        self.scene.num_envs = 1
+        self.scene.env_spacing = 20
         self.observations.policy.enable_corruption = False
