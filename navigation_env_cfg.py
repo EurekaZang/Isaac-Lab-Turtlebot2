@@ -59,10 +59,9 @@ class ObservationsCfg:
 
     @configclass
     class PolicyCfg(ObsGroup):
-        lidar_distances = ObsTerm(
-            func=mdp.get_lidar_distances,
-            params={"sensor_cfg": SceneEntityCfg("ray_caster")},
-            noise=Unoise(n_min=-0.01, n_max=0.01),
+        lidar_data = ObsTerm(
+            func=mdp.get_lidar_observation,
+            params={"sensor_cfg": SceneEntityCfg("lidar_sensor")},
         )
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
@@ -70,7 +69,9 @@ class ObservationsCfg:
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.0, n_max=1.0))
         actions = ObsTerm(func=mdp.last_action)
         pose_command = ObsTerm(func=mdp.generated_commands, params={"command_name": "pose_command"})
-
+        def __post_init__(self) -> None:
+            self.enable_corruption = False
+            self.concatenate_terms = False
     policy: PolicyCfg = PolicyCfg()
 
 
@@ -137,6 +138,7 @@ class NavigationEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
 
+        self.viewer.eye = (2.0, 2.0, 2.0)
         self.sim.dt = LOW_LEVEL_ENV_CFG.sim.dt
         self.sim.render_interval = LOW_LEVEL_ENV_CFG.decimation
         self.decimation = LOW_LEVEL_ENV_CFG.decimation * 10

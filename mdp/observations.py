@@ -12,6 +12,7 @@ the observation introduced by the function.
 from __future__ import annotations
 
 import torch
+import numpy as np
 from typing import TYPE_CHECKING
 
 import isaaclab.utils.math as math_utils
@@ -20,6 +21,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers.manager_base import ManagerTermBase
 from isaaclab.managers.manager_term_cfg import ObservationTermCfg
 from isaaclab.sensors import Camera, Imu, RayCaster, RayCasterCamera, TiledCamera
+from isaaclab.utils.math import quat_inv, quat_apply
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv, ManagerBasedRLEnv
@@ -243,21 +245,83 @@ def height_scan(env: ManagerBasedEnv, sensor_cfg: SceneEntityCfg, offset: float 
     # height scan: height = sensor_height - hit_point_z - offset
     return sensor.data.pos_w[:, 2].unsqueeze(1) - sensor.data.ray_hits_w[..., 2] - offset
 
-def get_lidar_distances(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+
+def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """
+    Processes raw LiDAR point cloud data into a fixed-size 360-degree scan.
+
+    This function takes the 3D hit points from a LiDAR sensor, transforms them into the
+    sensor's local frame, and then projects them onto the horizontal (XY) plane. It
+    discretizes the 360-degree horizontal field of view into 1-degree bins. For each
+    bin, it finds the point with the minimum distance to the sensor.
+
+    The final observation for each environment is a tensor of shape (360, 3), where each
+    row corresponds to a 1-degree bin and contains [sin(alpha), cos(alpha), distance].
+    'alpha' is the angle of the bin in radians, and 'distance' is the minimum distance
+    found in that bin. If no point falls into a bin, the distance is set to the sensor's
+    maximum range.
+
+    Args:
+        env: The reinforcement learning environment instance.
+        sensor_cfg: The configuration of the LiDAR sensor scene entity.
+
+    Returns:
+        A torch.Tensor of shape (num_envs, 360, 3) containing the processed
+        lidar observation [sin(alpha), cos(alpha), distance] for each environment.
+    """
     sensor: RayCaster = env.scene.sensors[sensor_cfg.name]
-    hit_coordinates: torch.Tensor = sensor.data.ray_hits_w
-    origin_coordinates: torch.Tensor = sensor.data.pos_w
+    hit_points_w = sensor.data.ray_hits_w
+    sensor_pos_w = sensor.data.pos_w
+    sensor_quat_w = sensor.data.quat_w
 
-    origin_coordinates_expanded = origin_coordinates[:, None, :]
-    distance_vectors = hit_coordinates - origin_coordinates_expanded
-    scalar_distances = torch.linalg.norm(distance_vectors, dim=-1) # 形状: (N, B)
-    min_range = sensor_cfg.min_range if hasattr(sensor_cfg, 'min_range') else 0.1
-    max_range = sensor_cfg.max_range if hasattr(sensor_cfg, 'max_range') else 10.0
-    clamped_distances = torch.clamp(scalar_distances, min=min_range, max=max_range)
+    num_envs = hit_points_w.shape[0]
+    num_points = hit_points_w.shape[1]
 
-    # 归一化到 [0, 1] 范围
-    normalized_distances = (clamped_distances - min_range) / (max_range - min_range)
-    return normalized_distances
+    relative_points_w = hit_points_w - sensor_pos_w.unsqueeze(1)
+    sensor_quat_inv_w = quat_inv(sensor_quat_w)
+    points_local = quat_apply(sensor_quat_inv_w.unsqueeze(1), relative_points_w)
+
+    distances = torch.linalg.norm(points_local, dim=-1)
+
+    angles_rad = torch.atan2(points_local[..., 1], points_local[..., 0])
+
+    angles_deg = torch.rad2deg(angles_rad)
+    bin_indices = ((angles_deg % 360) + 360) % 360
+    bin_indices = bin_indices.long()
+    # Initialize the final scan tensor with the maximum distance
+    final_scan = torch.full(
+        (num_envs, 360), fill_value=sensor.cfg.max_distance, device=env.device, dtype=torch.float32
+    )
+    # Iterate over each environment and update the final scan
+    for env_idx in range(num_envs):
+        env_distances = distances[env_idx]
+        env_bin_indices = bin_indices[env_idx]
+        # Filter out invalid distance values
+        valid_mask = torch.isfinite(env_distances) & (env_distances > 0)
+        if valid_mask.any():
+            valid_distances = env_distances[valid_mask]
+            valid_bins = env_bin_indices[valid_mask]
+            # Use scatter_reduce to update the minimum distance
+            final_scan[env_idx].scatter_reduce_(
+                dim=0,
+                index=valid_bins,
+                src=valid_distances,
+                reduce="amin",
+                include_self=False
+            )
+    scan_angles_deg = torch.arange(360, device=env.device, dtype=torch.float32)
+    scan_angles_rad = torch.deg2rad(scan_angles_deg)
+
+    sin_alpha = torch.sin(scan_angles_rad)
+    cos_alpha = torch.cos(scan_angles_rad)
+
+    sin_alpha_b = sin_alpha.expand(num_envs, -1)
+    cos_alpha_b = cos_alpha.expand(num_envs, -1)
+
+    observation = torch.stack([sin_alpha_b, cos_alpha_b, final_scan], dim=-1)
+
+    return observation
+
 
 
 def body_incoming_wrench(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:

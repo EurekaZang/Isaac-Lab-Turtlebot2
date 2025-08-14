@@ -13,7 +13,7 @@ import math
 import isaaclab.sim as sim_utils
 from isaaclab.sim import UsdFileCfg
 from  isaaclab.actuators import ImplicitActuatorCfg
-from isaaclab.assets import ArticulationCfg, AssetBaseCfg
+from isaaclab.assets import ArticulationCfg, AssetBaseCfg,RigidObjectCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
 from isaaclab.managers import CurriculumTermCfg as CurrTerm
 from isaaclab.managers import EventTermCfg as EventTerm
@@ -24,6 +24,8 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors import ContactSensorCfg, RayCasterCfg
+from isaaclab.sensors.ray_caster.patterns import LivoxPatternCfg
+from isaaclab.sensors import LidarSensor, LidarSensorCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR, ISAACLAB_NUCLEUS_DIR
@@ -45,6 +47,14 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.UsdFileCfg(
             usd_path=f"{ISAAC_NUCLEUS_DIR}/Environments/Terrains/flat_plane.usd",
             scale=(1, 1, 1),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(
+                rigid_body_enabled=True,
+                kinematic_enabled=True,
+                disable_gravity=True,
+            ),
+            collision_props=sim_utils.CollisionPropertiesCfg(
+                collision_enabled=True,
+            ),
         ),
     )
 
@@ -52,7 +62,6 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
     robot = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Robot",
         spawn=sim_utils.UsdFileCfg(
-            # usd_path=f"/home/unnc/Desktop/turtlebot2.usd",
             usd_path=f"{ISAAC_NUCLEUS_DIR}/Robots/iRobot/create_3.usd",
             activate_contact_sensors=True,
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
@@ -69,7 +78,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
             ),
         ),
         init_state=ArticulationCfg.InitialStateCfg(
-            pos=(0.0, 0.0, 0.0),
+            pos=(0.0, 0.0, 0.05),
             joint_pos={"left_wheel_joint": 0.0, "right_wheel_joint": 0.0},
             joint_vel={"left_wheel_joint": 0.0, "right_wheel_joint": 0.0},
         ),
@@ -82,31 +91,58 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         },
     )
 
-    ray_caster = RayCasterCfg(
+    lidar_sensor = LidarSensorCfg(
         prim_path="{ENV_REGEX_NS}/Robot/base_link",
-        update_period=1 / 30,
-        offset=RayCasterCfg.OffsetCfg(pos=(0, 0, 0.2)),
-        mesh_prim_paths=["/World/envs/env_0/Scene"],
-        ray_alignment="yaw",
-        pattern_cfg=patterns.LidarPatternCfg(
-            channels=1, vertical_fov_range=[0, 1], horizontal_fov_range=[-180, 180], horizontal_res=1.0
+        offset=LidarSensorCfg.OffsetCfg(pos=(0.0, 0.0, 0.0), rot=(1, 0, 0., 0.)),
+        attach_yaw_only=False,
+        ray_alignment = "world",
+        pattern_cfg=LivoxPatternCfg(
+            sensor_type="mid360",
+            samples=20000,
         ),
-        debug_vis=False,
+        mesh_prim_paths=["/World/static"],
+        max_distance=20.0,
+        min_range=0.1,
+        return_pointcloud=False,  # Disable pointcloud for performance
+        pointcloud_in_world_frame=False,
+        enable_sensor_noise=False,  # Disable noise for pure performance test
+        random_distance_noise=0.0,
+        update_frequency=25.0,  # 25 Hz for better performance
+        debug_vis=True,  # Disable visualization for performance
     )
 
-    scene = AssetBaseCfg(
-        prim_path="{ENV_REGEX_NS}/Scene",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[0.0, 0.0, 0.0], rot=[0.0, 0.0, 0.0, 0.0]),
-        spawn=UsdFileCfg(
-            usd_path=f"/home/unnc/Desktop/nav_scene_v2.usd",
-            rigid_props=sim_utils.RigidBodyPropertiesCfg(
-                rigid_body_enabled=True,
-                kinematic_enabled=True,
-                disable_gravity=False),
-            collision_props=sim_utils.CollisionPropertiesCfg(
-                collision_enabled=True
-            )
+    Cube = AssetBaseCfg(
+        prim_path="/World/static/Cubes_1",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.3, 0.3, 0.3),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 1.0, 1.0)),
+    )
+    Cube_2 = AssetBaseCfg(
+        prim_path="/World/static/Cubes_2",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.3, 0.3, 0.3),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(1.0, -1.0, 1.0)),
+    )
+    Sphere = AssetBaseCfg(
+        prim_path="/World/static/Spheres_1",
+        spawn=sim_utils.SphereCfg(
+            radius=0.4,
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, -1.0, 1.0)),
     )
 
 
@@ -128,7 +164,6 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
 ##
 # MDP settings
 ##
-
 
 @configclass
 class CommandsCfg:
@@ -165,7 +200,12 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group, adapted for a wheeled robot."""
 
-        lidar_distances = ObsTerm(func=mdp.get_lidar_distances, params={"sensor_cfg": SceneEntityCfg(name="ray_caster")})
+        lidar_distances = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("lidar_sensor")},
+            noise=Unoise(n_min=-0.1, n_max=0.1),
+            clip=(-1.0, 1.0),
+        )
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
@@ -268,7 +308,7 @@ class TerminationsCfg:
 class TurtleBot2FlatEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the TurtleBot2 velocity-tracking environment on flat terrains."""
 
-    scene: TurtleBot2SceneCfg = TurtleBot2SceneCfg(num_envs=2048, env_spacing=20)
+    scene: TurtleBot2SceneCfg = TurtleBot2SceneCfg(num_envs=2048, env_spacing=0)
     actions: ActionsCfg = ActionsCfg()
     observations: ObservationsCfg = ObservationsCfg()
     commands: CommandsCfg = CommandsCfg()
