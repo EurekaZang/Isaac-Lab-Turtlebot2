@@ -71,7 +71,7 @@ class ObservationsCfg:
         pose_command = ObsTerm(func=mdp.generated_commands, params={"command_name": "pose_command"})
         def __post_init__(self) -> None:
             self.enable_corruption = False
-            self.concatenate_terms = False
+            self.concatenate_terms = True
     policy: PolicyCfg = PolicyCfg()
 
 
@@ -104,7 +104,7 @@ class CommandsCfg:
     pose_command = mdp.UniformPose2dCommandCfg(
         asset_name="robot",
         simple_heading=True,
-        resampling_time_range=(60.0, 90.0),
+        resampling_time_range=(8.0, 8.0),
         debug_vis=False,
         ranges=mdp.UniformPose2dCommandCfg.Ranges(pos_x=(-15.0, 15.0), pos_y=(-15.0, 15.0), heading=(0.0, 0.0)),
     )

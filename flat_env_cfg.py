@@ -108,7 +108,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         enable_sensor_noise=False,  # Disable noise for pure performance test
         random_distance_noise=0.0,
         update_frequency=25.0,  # 25 Hz for better performance
-        debug_vis=True,  # Disable visualization for performance
+        debug_vis=False,  # Disable visualization for performance
     )
 
     Cube = AssetBaseCfg(
@@ -116,7 +116,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.CuboidCfg(
             size=(0.3, 0.3, 0.3),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
-            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
@@ -127,7 +127,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.CuboidCfg(
             size=(0.3, 0.3, 0.3),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
-            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
@@ -138,7 +138,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.SphereCfg(
             radius=0.4,
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
-            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
         ),

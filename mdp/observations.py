@@ -279,7 +279,17 @@ def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) ->
 
     relative_points_w = hit_points_w - sensor_pos_w.unsqueeze(1)
     sensor_quat_inv_w = quat_inv(sensor_quat_w)
-    points_local = quat_apply(sensor_quat_inv_w.unsqueeze(1), relative_points_w)
+    
+    # Reshape for batch processing
+    # Flatten the points to (num_envs * num_points, 3)
+    relative_points_flat = relative_points_w.view(-1, 3)
+    # Repeat quaternions for each point
+    sensor_quat_inv_repeated = sensor_quat_inv_w.repeat_interleave(num_points, dim=0)
+    
+    # Apply quaternion rotation
+    points_local_flat = quat_apply(sensor_quat_inv_repeated, relative_points_flat)
+    # Reshape back to (num_envs, num_points, 3)
+    points_local = points_local_flat.view(num_envs, num_points, 3)
 
     distances = torch.linalg.norm(points_local, dim=-1)
 
@@ -320,7 +330,8 @@ def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) ->
 
     observation = torch.stack([sin_alpha_b, cos_alpha_b, final_scan], dim=-1)
 
-    return observation
+    # print(f"Processed LiDAR observation shape: {observation.shape} for {num_envs} environments.\nflattened shape: {observation.view(num_envs, -1).shape}")
+    return torch.flatten(observation, start_dim=1)
 
 
 
