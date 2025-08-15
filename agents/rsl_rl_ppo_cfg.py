@@ -43,8 +43,8 @@ class Turtlebot2VelocityPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 @configclass
 class NavigationEnvPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 8
-    max_iterations = 8000
-    save_interval = 100
+    max_iterations = 80000
+    save_interval = 1000
     experiment_name = "turtlebot2_nav"
     empirical_normalization = True
 
@@ -52,7 +52,7 @@ class NavigationEnvPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         init_noise_std=0.5,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
-        activation="elu",
+        activation="relu",
     )
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,

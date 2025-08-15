@@ -62,6 +62,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
     robot = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Robot",
         spawn=sim_utils.UsdFileCfg(
+            # usd_path=f"/home/unnc/Desktop/turtlebot2.usd",
             usd_path=f"{ISAAC_NUCLEUS_DIR}/Robots/iRobot/create_3.usd",
             activate_contact_sensors=True,
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
@@ -78,7 +79,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
             ),
         ),
         init_state=ArticulationCfg.InitialStateCfg(
-            pos=(0.0, 0.0, 0.05),
+            pos=(0.0, 0.0, 0.0),
             joint_pos={"left_wheel_joint": 0.0, "right_wheel_joint": 0.0},
             joint_vel={"left_wheel_joint": 0.0, "right_wheel_joint": 0.0},
         ),
@@ -102,7 +103,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         ),
         mesh_prim_paths=["/World/static"],
         max_distance=20.0,
-        min_range=0.1,
+        min_range=0.01,
         return_pointcloud=False,  # Disable pointcloud for performance
         pointcloud_in_world_frame=False,
         enable_sensor_noise=False,  # Disable noise for pure performance test
@@ -120,7 +121,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 1.0, 1.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 1.0, 0.0)),
     )
     Cube_2 = AssetBaseCfg(
         prim_path="/World/static/Cubes_2",
@@ -131,7 +132,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(1.0, -1.0, 1.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(1.0, -1.0, 0.0)),
     )
     Sphere = AssetBaseCfg(
         prim_path="/World/static/Spheres_1",
@@ -142,7 +143,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, -1.0, 1.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, -1.0, 0.0)),
     )
 
 
@@ -318,7 +319,7 @@ class TurtleBot2FlatEnvCfg(ManagerBasedRLEnvCfg):
 
     def __post_init__(self):
         """Post initialization."""
-        self.decimation = 20
+        self.decimation = 10
         self.episode_length_s = 20.0
         self.sim.dt = 0.01
         self.sim.render_interval = self.decimation

@@ -26,7 +26,7 @@ LOW_LEVEL_ENV_CFG = TurtleBot2FlatEnvCfg()
 class EventCfg:
     """Configuration for events."""
 
-    reset_base = EventTerm(
+    reset_cube = EventTerm(
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
@@ -41,8 +41,6 @@ class EventCfg:
             },
         },
     )
-
-
 
 @configclass
 class ActionsCfg:
@@ -65,9 +63,6 @@ class ObservationsCfg:
         )
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
-        projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.0, n_max=1.0))
-        actions = ObsTerm(func=mdp.last_action)
         pose_command = ObsTerm(func=mdp.generated_commands, params={"command_name": "pose_command"})
         def __post_init__(self) -> None:
             self.enable_corruption = False
@@ -82,7 +77,7 @@ class RewardsCfg:
     termination_penalty = RewTerm(func=mdp.is_terminated, weight=-400.0)
     position_tracking = RewTerm(
         func=mdp.position_command_error_tanh,
-        weight=1.0,
+        weight=5.0,
         params={"std": 2.0, "command_name": "pose_command"},
     )
     position_tracking_fine_grained = RewTerm(
@@ -105,7 +100,7 @@ class CommandsCfg:
         asset_name="robot",
         simple_heading=True,
         resampling_time_range=(8.0, 8.0),
-        debug_vis=False,
+        debug_vis=True,
         ranges=mdp.UniformPose2dCommandCfg.Ranges(pos_x=(-15.0, 15.0), pos_y=(-15.0, 15.0), heading=(0.0, 0.0)),
     )
 
@@ -114,10 +109,14 @@ class CommandsCfg:
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
-    time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    base_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 1.0},
+    # time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    # base_contact = DoneTerm(
+    #     func=mdp.illegal_contact,
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 1.0},
+    # )
+    too_close = DoneTerm(
+        func=mdp.too_close,
+        params={"sensor_cfg": SceneEntityCfg("lidar_sensor")},
     )
 
 
@@ -137,12 +136,14 @@ class NavigationEnvCfg(ManagerBasedRLEnvCfg):
 
     def __post_init__(self):
         """Post initialization."""
-
         self.viewer.eye = (2.0, 2.0, 2.0)
-        self.sim.dt = LOW_LEVEL_ENV_CFG.sim.dt
-        self.sim.render_interval = LOW_LEVEL_ENV_CFG.decimation
-        self.decimation = LOW_LEVEL_ENV_CFG.decimation * 10
-        self.episode_length_s = self.commands.pose_command.resampling_time_range[1]
+        # general settings
+        self.decimation = 4
+        self.episode_length_s = 20.0
+        # simulation settings
+        self.sim.dt = 0.005
+        self.sim.render_interval = self.decimation
+
         if self.scene.contact_forces is not None:
             self.scene.contact_forces.update_period = self.sim.dt
 
@@ -153,5 +154,5 @@ class NavigationEnvCfg_PLAY(NavigationEnvCfg):
         super().__post_init__()
 
         self.scene.num_envs = 1
-        self.scene.env_spacing = 20
+        self.scene.env_spacing = 0
         self.observations.policy.enable_corruption = False

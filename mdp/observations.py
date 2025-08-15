@@ -330,7 +330,7 @@ def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) ->
 
     observation = torch.stack([sin_alpha_b, cos_alpha_b, final_scan], dim=-1)
 
-    # print(f"Processed LiDAR observation shape: {observation.shape} for {num_envs} environments.\nflattened shape: {observation.view(num_envs, -1).shape}")
+    print(f"get_lidar_data return:{torch.flatten(observation, start_dim=1)}")
     return torch.flatten(observation, start_dim=1)
 
 
