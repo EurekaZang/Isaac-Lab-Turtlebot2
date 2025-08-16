@@ -131,3 +131,38 @@ def heading_command_error_abs(env: ManagerBasedRLEnv, command_name: str) -> torc
     command = env.command_manager.get_command(command_name)
     heading_b = command[:, 3]
     return heading_b.abs()
+
+
+def reward_high_lin_vel_exp(
+    env: ManagerBasedRLEnv, saturation_speed_std: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """
+    Rewards the robot for achieving higher linear velocity, using an exponential saturation function.
+
+    This reward encourages the robot to move as fast as possible by providing a positive
+    reward that increases with the magnitude of its linear velocity, saturating at 1.0.
+    It does not depend on any external command.
+
+    Args:
+        env (ManagerBasedRLEnv): The reinforcement learning environment instance.
+        saturation_speed_std (float): A standard deviation-like parameter that controls
+                                      how quickly the reward saturates with increasing speed.
+                                      - A smaller value means the reward saturates faster,
+                                        requiring higher speeds to reach near-maximum reward.
+                                      - A larger value means the reward increases more
+                                        gradually, providing significant reward even at
+                                        moderately high speeds.
+                                      It represents the characteristic speed at which the
+                                      reward reaches approximately 63.2% of its maximum.
+        asset_cfg (SceneEntityCfg): Configuration of the robot asset (e.g., "robot").
+
+    Returns:
+        torch.Tensor: A tensor of shape (num_envs,) representing the linear velocity reward
+                      for each environment.
+    """
+    asset = env.scene[asset_cfg.name]
+    lin_vel_world_xy = asset.data.root_lin_vel_w[:, :2]
+    speed_magnitude = torch.linalg.norm(lin_vel_world_xy, dim=1)
+    reward = 1.0 - torch.exp(-speed_magnitude / saturation_speed_std)
+
+    return reward

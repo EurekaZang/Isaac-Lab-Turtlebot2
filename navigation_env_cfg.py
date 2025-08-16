@@ -75,9 +75,30 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     termination_penalty = RewTerm(func=mdp.is_terminated, weight=-400.0)
+    # position_tracking = RewTerm(
+    #     func=mdp.position_command_error_tanh,
+    #     weight=50.0,
+    #     params={"std": 2.0, "command_name": "pose_command"},
+    # )
+    # position_tracking_fine_grained = RewTerm(
+    #     func=mdp.position_command_error_tanh,
+    #     weight=1.0,
+    #     params={"std": 0.2, "command_name": "pose_command"},
+    # )
+    # orientation_tracking = RewTerm(
+    #     func=mdp.heading_command_error_abs,
+    #     weight=-0.5,
+    #     params={"command_name": "pose_command"},
+    # )
+    # reward_high_lin_vel_exp = RewTerm(
+    #     func=mdp.reward_high_lin_vel_exp,
+    #     weight=1.0,
+    #     params={"saturation_speed_std": 1.0}
+    # )
+
     position_tracking = RewTerm(
         func=mdp.position_command_error_tanh,
-        weight=5.0,
+        weight=0.5,
         params={"std": 2.0, "command_name": "pose_command"},
     )
     position_tracking_fine_grained = RewTerm(
@@ -101,19 +122,13 @@ class CommandsCfg:
         simple_heading=True,
         resampling_time_range=(8.0, 8.0),
         debug_vis=True,
-        ranges=mdp.UniformPose2dCommandCfg.Ranges(pos_x=(-15.0, 15.0), pos_y=(-15.0, 15.0), heading=(0.0, 0.0)),
+        ranges=mdp.UniformPose2dCommandCfg.Ranges(pos_x=(-8.0, 8.0), pos_y=(-8.0, 8.0), heading=(0.0, 0.0)),
     )
 
 
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
-
-    # time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    # base_contact = DoneTerm(
-    #     func=mdp.illegal_contact,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base_link"), "threshold": 1.0},
-    # )
     too_close = DoneTerm(
         func=mdp.too_close,
         params={"sensor_cfg": SceneEntityCfg("lidar_sensor")},

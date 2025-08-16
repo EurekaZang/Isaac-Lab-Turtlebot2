@@ -50,8 +50,8 @@ class NavigationEnvPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=0.5,
-        actor_hidden_dims=[512, 256, 128],
-        critic_hidden_dims=[512, 256, 128],
+        actor_hidden_dims=[128, 128, 128, 128],
+        critic_hidden_dims=[128, 128, 128, 128],
         activation="relu",
     )
     algorithm = RslRlPpoAlgorithmCfg(

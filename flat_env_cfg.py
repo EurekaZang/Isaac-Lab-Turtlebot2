@@ -47,14 +47,6 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.UsdFileCfg(
             usd_path=f"{ISAAC_NUCLEUS_DIR}/Environments/Terrains/flat_plane.usd",
             scale=(1, 1, 1),
-            rigid_props=sim_utils.RigidBodyPropertiesCfg(
-                rigid_body_enabled=True,
-                kinematic_enabled=True,
-                disable_gravity=True,
-            ),
-            collision_props=sim_utils.CollisionPropertiesCfg(
-                collision_enabled=True,
-            ),
         ),
     )
 
@@ -112,7 +104,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         debug_vis=False,  # Disable visualization for performance
     )
 
-    Cube = AssetBaseCfg(
+    Cube_1 = AssetBaseCfg(
         prim_path="/World/static/Cubes_1",
         spawn=sim_utils.CuboidCfg(
             size=(0.3, 0.3, 0.3),
@@ -121,8 +113,9 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 1.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 2.0, 0.0)),
     )
+
     Cube_2 = AssetBaseCfg(
         prim_path="/World/static/Cubes_2",
         spawn=sim_utils.CuboidCfg(
@@ -132,20 +125,80 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(1.0, -1.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, -2.0, 0.0)),
     )
-    Sphere = AssetBaseCfg(
-        prim_path="/World/static/Spheres_1",
-        spawn=sim_utils.SphereCfg(
-            radius=0.4,
+
+    Cube_3 = AssetBaseCfg(
+        prim_path="/World/static/Cubes_3",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.3, 0.3, 0.3),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
-            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, -1.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-2.0, 0.0, 0.0)),
     )
 
+    Cube_4 = AssetBaseCfg(
+        prim_path="/World/static/Cubes_4",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.3, 0.3, 0.3),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-2.0, 2.0, 0.0)),
+    )
+
+    Cube_5 = AssetBaseCfg(
+        prim_path="/World/static/Cubes_5",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.3, 0.3, 0.3),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-2.0, -2.0, 0.0)),
+    )
+
+    Cube_6 = AssetBaseCfg(
+        prim_path="/World/static/Cubes_6",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.3, 0.3, 0.3),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(2.0, 2.0, 0.0)),
+    )
+
+    Cube_7 = AssetBaseCfg(
+        prim_path="/World/static/Cubes_7",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.3, 0.3, 0.3),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(2.0, 0.0, 0.0)),
+    )
+
+    Cube_8 = AssetBaseCfg(
+        prim_path="/World/static/Cubes_8",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.3, 0.3, 0.3),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(2.0, -2.0, 0.0)),
+    )
 
     contact_forces = ContactSensorCfg(
         prim_path="{ENV_REGEX_NS}/Robot/base_link",
