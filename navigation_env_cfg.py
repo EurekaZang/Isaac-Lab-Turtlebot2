@@ -30,14 +30,14 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-3.14, 3.14)},
+            "pose_range": {"x": (0.0, 0.0), "y": (0.0, 0.0), "yaw": (0, 0)},
             "velocity_range": {
-                "x": (-0.0, 0.0),
-                "y": (-0.0, 0.0),
-                "z": (-0.0, 0.0),
-                "roll": (-0.0, 0.0),
-                "pitch": (-0.0, 0.0),
-                "yaw": (-0.0, 0.0),
+                "x": (0.0, 0.0),
+                "y": (0.0, 0.0),
+                "z": (0.0, 0.0),
+                "roll": (0.0, 0.0),
+                "pitch": (0.0, 0.0),
+                "yaw": (0.0, 0.0),
             },
         },
     )
@@ -74,42 +74,21 @@ class ObservationsCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    termination_penalty = RewTerm(func=mdp.is_terminated, weight=-400.0)
-    # position_tracking = RewTerm(
-    #     func=mdp.position_command_error_tanh,
-    #     weight=50.0,
-    #     params={"std": 2.0, "command_name": "pose_command"},
-    # )
-    # position_tracking_fine_grained = RewTerm(
-    #     func=mdp.position_command_error_tanh,
-    #     weight=1.0,
-    #     params={"std": 0.2, "command_name": "pose_command"},
-    # )
-    # orientation_tracking = RewTerm(
-    #     func=mdp.heading_command_error_abs,
-    #     weight=-0.5,
-    #     params={"command_name": "pose_command"},
-    # )
-    # reward_high_lin_vel_exp = RewTerm(
-    #     func=mdp.reward_high_lin_vel_exp,
-    #     weight=1.0,
-    #     params={"saturation_speed_std": 1.0}
-    # )
-
+    termination_penalty = RewTerm(func=mdp.is_terminated, weight=-4.0)
     position_tracking = RewTerm(
         func=mdp.position_command_error_tanh,
-        weight=0.5,
-        params={"std": 2.0, "command_name": "pose_command"},
+        weight=20.0,
+        params={"std": 5.0, "command_name": "pose_command"},
     )
     position_tracking_fine_grained = RewTerm(
         func=mdp.position_command_error_tanh,
-        weight=0.5,
+        weight=10.0,
         params={"std": 0.2, "command_name": "pose_command"},
     )
-    orientation_tracking = RewTerm(
-        func=mdp.heading_command_error_abs,
-        weight=-0.2,
-        params={"command_name": "pose_command"},
+    reward_high_lin_vel_exp = RewTerm(
+        func=mdp.reward_high_lin_vel_exp,
+        weight=10,
+        params={"std": 1.0, "asset_cfg": SceneEntityCfg("robot", body_names="base_link")}
     )
 
 
@@ -120,9 +99,9 @@ class CommandsCfg:
     pose_command = mdp.UniformPose2dCommandCfg(
         asset_name="robot",
         simple_heading=True,
-        resampling_time_range=(8.0, 8.0),
-        debug_vis=True,
-        ranges=mdp.UniformPose2dCommandCfg.Ranges(pos_x=(-8.0, 8.0), pos_y=(-8.0, 8.0), heading=(0.0, 0.0)),
+        resampling_time_range=(20.0, 20.0),
+        debug_vis=False,
+        ranges=mdp.UniformPose2dCommandCfg.Ranges(pos_x=(5.0, 5.0), pos_y=(5.0, 5.0), heading=(0.0, 0.0)),
     )
 
 
@@ -133,6 +112,7 @@ class TerminationsCfg:
         func=mdp.too_close,
         params={"sensor_cfg": SceneEntityCfg("lidar_sensor")},
     )
+    # time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
 
 @configclass

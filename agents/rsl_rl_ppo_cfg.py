@@ -44,7 +44,7 @@ class Turtlebot2VelocityPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 class NavigationEnvPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 8
     max_iterations = 80000
-    save_interval = 1000
+    save_interval = 100
     experiment_name = "turtlebot2_nav"
     empirical_normalization = True
 

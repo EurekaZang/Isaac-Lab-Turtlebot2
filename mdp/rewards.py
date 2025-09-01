@@ -134,7 +134,7 @@ def heading_command_error_abs(env: ManagerBasedRLEnv, command_name: str) -> torc
 
 
 def reward_high_lin_vel_exp(
-    env: ManagerBasedRLEnv, saturation_speed_std: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+    env: ManagerBasedRLEnv, std: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
 ) -> torch.Tensor:
     """
     Rewards the robot for achieving higher linear velocity, using an exponential saturation function.
@@ -163,6 +163,6 @@ def reward_high_lin_vel_exp(
     asset = env.scene[asset_cfg.name]
     lin_vel_world_xy = asset.data.root_lin_vel_w[:, :2]
     speed_magnitude = torch.linalg.norm(lin_vel_world_xy, dim=1)
-    reward = 1.0 - torch.exp(-speed_magnitude / saturation_speed_std)
+    reward = 1.0 - torch.exp(-speed_magnitude / std)
 
     return reward

@@ -246,17 +246,94 @@ def height_scan(env: ManagerBasedEnv, sensor_cfg: SceneEntityCfg, offset: float 
     return sensor.data.pos_w[:, 2].unsqueeze(1) - sensor.data.ray_hits_w[..., 2] - offset
 
 
+# def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+#     """
+#     Processes raw LiDAR point cloud data into a fixed-size 90-degree scan.
+
+#     This function takes the 3D hit points from a LiDAR sensor, transforms them into the
+#     sensor's local frame, and then projects them onto the horizontal (XY) plane. It
+#     discretizes the 360-degree horizontal field of view into 90 bins (4 degrees per bin). For each
+#     bin, it finds the point with the minimum distance to the sensor.
+
+#     The final observation for each environment is a tensor of shape (90, 3), where each
+#     row corresponds to a 4-degree bin and contains [sin(alpha), cos(alpha), distance].
+#     'alpha' is the angle of the bin in radians, and 'distance' is the minimum distance
+#     found in that bin. If no point falls into a bin, the distance is set to the sensor's
+#     maximum range.
+
+#     Args:
+#         env: The reinforcement learning environment instance.
+#         sensor_cfg: The configuration of the LiDAR sensor scene entity.
+
+#     Returns:
+#         A torch.Tensor of shape (num_envs, 90, 3) containing the processed
+#         lidar observation [sin(alpha), cos(alpha), distance] for each environment.
+#     """
+#     sensor: RayCaster = env.scene.sensors[sensor_cfg.name]
+#     hit_points_w = sensor.data.ray_hits_w
+#     sensor_pos_w = sensor.data.pos_w
+#     sensor_quat_w = sensor.data.quat_w
+
+#     num_envs = hit_points_w.shape[0]
+#     num_points = hit_points_w.shape[1]
+
+#     relative_points_w = hit_points_w - sensor_pos_w.unsqueeze(1)
+#     sensor_quat_inv_w = quat_inv(sensor_quat_w)
+    
+#     # Reshape for batch processing
+#     relative_points_flat = relative_points_w.view(-1, 3)
+#     sensor_quat_inv_repeated = sensor_quat_inv_w.repeat_interleave(num_points, dim=0)
+#     points_local_flat = quat_apply(sensor_quat_inv_repeated, relative_points_flat)
+#     points_local = points_local_flat.view(num_envs, num_points, 3)
+
+#     distances = torch.linalg.norm(points_local, dim=-1)
+#     angles_rad = torch.atan2(points_local[..., 1], points_local[..., 0])
+
+#     # Discretize into 90 bins (4 degrees per bin)
+#     angles_deg = torch.rad2deg(angles_rad)
+#     bin_indices = (((angles_deg % 360) / 4).floor().long()) % 90
+
+#     # Initialize the final scan tensor with the maximum distance
+#     final_scan = torch.full(
+#         (num_envs, 90), fill_value=sensor.cfg.max_distance, device=env.device, dtype=torch.float32
+#     )
+#     for env_idx in range(num_envs):
+#         env_distances = distances[env_idx]
+#         env_bin_indices = bin_indices[env_idx]
+#         valid_mask = torch.isfinite(env_distances) & (env_distances > 0)
+#         if valid_mask.any():
+#             valid_distances = env_distances[valid_mask]
+#             valid_bins = env_bin_indices[valid_mask]
+#             final_scan[env_idx].scatter_reduce_(
+#                 dim=0,
+#                 index=valid_bins,
+#                 src=valid_distances,
+#                 reduce="amin",
+#                 include_self=False
+#             )
+#     scan_angles_deg = torch.arange(0, 360, 4, device=env.device, dtype=torch.float32)
+#     scan_angles_rad = torch.deg2rad(scan_angles_deg)
+
+#     sin_alpha = torch.sin(scan_angles_rad)
+#     cos_alpha = torch.cos(scan_angles_rad)
+
+#     sin_alpha_b = sin_alpha.expand(num_envs, -1)
+#     cos_alpha_b = cos_alpha.expand(num_envs, -1)
+
+#     observation = torch.stack([sin_alpha_b, cos_alpha_b, final_scan], dim=-1)
+#     return torch.flatten(observation, start_dim=1)
+
 def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     """
-    Processes raw LiDAR point cloud data into a fixed-size 360-degree scan.
+    Processes raw LiDAR point cloud data into a fixed-size 90-degree scan.
 
     This function takes the 3D hit points from a LiDAR sensor, transforms them into the
     sensor's local frame, and then projects them onto the horizontal (XY) plane. It
-    discretizes the 360-degree horizontal field of view into 1-degree bins. For each
+    discretizes the 360-degree horizontal field of view into 90 bins (4 degrees per bin). For each
     bin, it finds the point with the minimum distance to the sensor.
 
-    The final observation for each environment is a tensor of shape (360, 3), where each
-    row corresponds to a 1-degree bin and contains [sin(alpha), cos(alpha), distance].
+    The final observation for each environment is a tensor of shape (90, 6), where each
+    row corresponds to a 4-degree bin and contains [sin(alpha), cos(alpha), distance, 0.2, 0.2, 0.4].
     'alpha' is the angle of the bin in radians, and 'distance' is the minimum distance
     found in that bin. If no point falls into a bin, the distance is set to the sensor's
     maximum range.
@@ -266,8 +343,8 @@ def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) ->
         sensor_cfg: The configuration of the LiDAR sensor scene entity.
 
     Returns:
-        A torch.Tensor of shape (num_envs, 360, 3) containing the processed
-        lidar observation [sin(alpha), cos(alpha), distance] for each environment.
+        A torch.Tensor of shape (num_envs, 90, 6) containing the processed
+        lidar observation [sin(alpha), cos(alpha), distance, 0.2, 0.2, 0.4] for each environment.
     """
     sensor: RayCaster = env.scene.sensors[sensor_cfg.name]
     hit_points_w = sensor.data.ray_hits_w
@@ -281,37 +358,29 @@ def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) ->
     sensor_quat_inv_w = quat_inv(sensor_quat_w)
     
     # Reshape for batch processing
-    # Flatten the points to (num_envs * num_points, 3)
     relative_points_flat = relative_points_w.view(-1, 3)
-    # Repeat quaternions for each point
     sensor_quat_inv_repeated = sensor_quat_inv_w.repeat_interleave(num_points, dim=0)
-    
-    # Apply quaternion rotation
     points_local_flat = quat_apply(sensor_quat_inv_repeated, relative_points_flat)
-    # Reshape back to (num_envs, num_points, 3)
     points_local = points_local_flat.view(num_envs, num_points, 3)
 
     distances = torch.linalg.norm(points_local, dim=-1)
-
     angles_rad = torch.atan2(points_local[..., 1], points_local[..., 0])
 
+    # Discretize into 90 bins (4 degrees per bin)
     angles_deg = torch.rad2deg(angles_rad)
-    bin_indices = ((angles_deg % 360) + 360) % 360
-    bin_indices = bin_indices.long()
+    bin_indices = (((angles_deg % 360) / 4).floor().long()) % 90
+
     # Initialize the final scan tensor with the maximum distance
     final_scan = torch.full(
-        (num_envs, 360), fill_value=sensor.cfg.max_distance, device=env.device, dtype=torch.float32
+        (num_envs, 90), fill_value=sensor.cfg.max_distance, device=env.device, dtype=torch.float32
     )
-    # Iterate over each environment and update the final scan
     for env_idx in range(num_envs):
         env_distances = distances[env_idx]
         env_bin_indices = bin_indices[env_idx]
-        # Filter out invalid distance values
         valid_mask = torch.isfinite(env_distances) & (env_distances > 0)
         if valid_mask.any():
             valid_distances = env_distances[valid_mask]
             valid_bins = env_bin_indices[valid_mask]
-            # Use scatter_reduce to update the minimum distance
             final_scan[env_idx].scatter_reduce_(
                 dim=0,
                 index=valid_bins,
@@ -319,7 +388,7 @@ def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) ->
                 reduce="amin",
                 include_self=False
             )
-    scan_angles_deg = torch.arange(360, device=env.device, dtype=torch.float32)
+    scan_angles_deg = torch.arange(0, 360, 4, device=env.device, dtype=torch.float32)
     scan_angles_rad = torch.deg2rad(scan_angles_deg)
 
     sin_alpha = torch.sin(scan_angles_rad)
@@ -328,12 +397,14 @@ def get_lidar_observation(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) ->
     sin_alpha_b = sin_alpha.expand(num_envs, -1)
     cos_alpha_b = cos_alpha.expand(num_envs, -1)
 
-    observation = torch.stack([sin_alpha_b, cos_alpha_b, final_scan], dim=-1)
-    # print(f"\n\n\n------------------------\nObservation: {observation}\n------------------------")
+    # 新增常数特征
+    const1 = torch.full_like(sin_alpha_b, 0.2)
+    const2 = torch.full_like(sin_alpha_b, 0.2)
+    const3 = torch.full_like(sin_alpha_b, 0.4)
 
-    # return observation
+    # 堆叠六个特征
+    observation = torch.stack([sin_alpha_b, cos_alpha_b, final_scan, const1, const2, const3], dim=-1)
     return torch.flatten(observation, start_dim=1)
-
 
 
 def body_incoming_wrench(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:

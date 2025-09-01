@@ -73,13 +73,13 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         init_state=ArticulationCfg.InitialStateCfg(
             pos=(0.0, 0.0, 0.0),
             joint_pos={"left_wheel_joint": 0.0, "right_wheel_joint": 0.0},
-            joint_vel={"left_wheel_joint": 0.0, "right_wheel_joint": 0.0},
+            joint_vel={"left_wheel_joint": 5.0, "right_wheel_joint": 5.0},
         ),
         actuators={
             "wheels": ImplicitActuatorCfg(
                 joint_names_expr=["left_wheel_joint", "right_wheel_joint"],
-                stiffness=2.0,
-                damping=10.0,
+                stiffness=None,
+                damping=None,
             ),
         },
     )
@@ -88,7 +88,7 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Robot/base_link",
         offset=LidarSensorCfg.OffsetCfg(pos=(0.0, 0.0, 0.0), rot=(1, 0, 0., 0.)),
         attach_yaw_only=False,
-        ray_alignment = "world",
+        ray_alignment = "base",
         pattern_cfg=LivoxPatternCfg(
             sensor_type="mid360",
             samples=20000,
@@ -107,97 +107,97 @@ class TurtleBot2SceneCfg(InteractiveSceneCfg):
     Cube_1 = AssetBaseCfg(
         prim_path="/World/static/Cubes_1",
         spawn=sim_utils.CuboidCfg(
-            size=(0.3, 0.3, 0.3),
+            size=(0.1, 0.1, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 2.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 3.0, 0.0)),
     )
 
     Cube_2 = AssetBaseCfg(
         prim_path="/World/static/Cubes_2",
         spawn=sim_utils.CuboidCfg(
-            size=(0.3, 0.3, 0.3),
+            size=(0.1, 0.1, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, -2.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, -3.0, 0.0)),
     )
 
     Cube_3 = AssetBaseCfg(
         prim_path="/World/static/Cubes_3",
         spawn=sim_utils.CuboidCfg(
-            size=(0.3, 0.3, 0.3),
+            size=(0.1, 0.1, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(-2.0, 0.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-3.0, 0.0, 0.0)),
     )
 
     Cube_4 = AssetBaseCfg(
         prim_path="/World/static/Cubes_4",
         spawn=sim_utils.CuboidCfg(
-            size=(0.3, 0.3, 0.3),
+            size=(0.1, 0.1, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(-2.0, 2.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-3.0, 3.0, 0.0)),
     )
 
     Cube_5 = AssetBaseCfg(
         prim_path="/World/static/Cubes_5",
         spawn=sim_utils.CuboidCfg(
-            size=(0.3, 0.3, 0.3),
+            size=(0.1, 0.1, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(-2.0, -2.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-3.0, -3.0, 0.0)),
     )
 
     Cube_6 = AssetBaseCfg(
         prim_path="/World/static/Cubes_6",
         spawn=sim_utils.CuboidCfg(
-            size=(0.3, 0.3, 0.3),
+            size=(0.1, 0.1, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(2.0, 2.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(3.0, 3.0, 0.0)),
     )
 
     Cube_7 = AssetBaseCfg(
         prim_path="/World/static/Cubes_7",
         spawn=sim_utils.CuboidCfg(
-            size=(0.3, 0.3, 0.3),
+            size=(0.1, 0.1, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(2.0, 0.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(3.0, 0.0, 0.0)),
     )
 
     Cube_8 = AssetBaseCfg(
         prim_path="/World/static/Cubes_8",
         spawn=sim_utils.CuboidCfg(
-            size=(0.3, 0.3, 0.3),
+            size=(0.1, 0.1, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=False),
             mass_props=sim_utils.MassPropertiesCfg(mass=1000.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(2.0, -2.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-3.0, -3.0, 0.0)),
     )
 
     contact_forces = ContactSensorCfg(
@@ -254,12 +254,6 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group, adapted for a wheeled robot."""
 
-        lidar_distances = ObsTerm(
-            func=mdp.height_scan,
-            params={"sensor_cfg": SceneEntityCfg("lidar_sensor")},
-            noise=Unoise(n_min=-0.1, n_max=0.1),
-            clip=(-1.0, 1.0),
-        )
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
@@ -279,17 +273,7 @@ class EventCfg:
     """Configuration for events (domain randomization)."""
 
     # --- startup ---
-    physics_material = EventTerm(
-        func=mdp.randomize_rigid_body_material,
-        mode="startup",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "static_friction_range": (0.8, 0.8),
-            "dynamic_friction_range": (0.6, 0.6),
-            "restitution_range": (0.0, 0.0),
-            "num_buckets": 64,
-        },
-    )
+
     # Randomize robot base mass and CoM
     add_base_mass = EventTerm(
         func=mdp.randomize_rigid_body_mass,
@@ -362,7 +346,7 @@ class TerminationsCfg:
 class TurtleBot2FlatEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the TurtleBot2 velocity-tracking environment on flat terrains."""
 
-    scene: TurtleBot2SceneCfg = TurtleBot2SceneCfg(num_envs=2048, env_spacing=0)
+    scene: TurtleBot2SceneCfg = TurtleBot2SceneCfg(num_envs=2048, env_spacing=20)
     actions: ActionsCfg = ActionsCfg()
     observations: ObservationsCfg = ObservationsCfg()
     commands: CommandsCfg = CommandsCfg()
@@ -387,8 +371,8 @@ class TurtleBot2FlatEnvCfg_PLAY(TurtleBot2FlatEnvCfg):
         super().__post_init__()
 
         # make a smaller scene for play
-        self.scene.num_envs = 50
-        self.scene.env_spacing = 2.5
+        self.scene.num_envs = 128
+        self.scene.env_spacing = 20
         # spawn the robot randomly in the grid (instead of their terrain levels)
         self.scene.terrain.max_init_terrain_level = None
         # reduce the number of terrains to save memory
